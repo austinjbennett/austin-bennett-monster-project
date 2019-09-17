@@ -125,7 +125,7 @@ export default {
     specialAttack: function () {
 		if (this.spAttCount < 2) {
 			this.spAttCount += 1;
-			var damage = this.calculateDamage(10, 20);
+			var damage = this.calculateDamage(10, 30);
 			this.monsterHealth -= damage;
 			this.turns.unshift({
 				isPlayer: true,
