@@ -1,55 +1,64 @@
 <template>
 	<div id="app">
-		<v-container fluid>
-			<v-row>
-				<v-col cols="6">
-					<v-card class="pa-2">
+		<v-container fluid >
+			<v-row style="margin: 0 auto; justify-content: center; flex-wrap: nowrap;">
+				<v-col cols="12">
+					{{ message }}
+				</v-col>
+			</v-row>
+			<v-row justify="center" align="middle" class="flex-nowrap mx-auto" style="margin: 0 auto; justify-content: center; flex-wrap: nowrap;">
+				<v-col cols="12" md="6">
+					<v-card class="pa-2" style="padding: 8px;">
 						<h1 class="text-center">YOU</h1>
 						<div class="healthbar">
 							<div
-								class="healthbar text-center"
-								style="background-color: green; margin: 0; color: white;"
-								:style="{width: playerHealth + '%'}">
+								class="healthbar healthbar-inner text-center"
+								style="margin: 0;"
+								:style="{width: playerHealth + '%'}"
+								:class="{ 'yellow': playerYellow, 'red': playerRed }">
 								{{ playerHealth }}
 							</div>
 						</div>
 					</v-card>
 				</v-col>
-				<v-col cols="6">
-					<h1 class="text-center">MONSTER</h1>
-					<div class="healthbar">
-						<div
-								class="healthbar text-center"
-								style="background-color: green; margin: 0; color: white;"
-								:style="{width: monsterHealth + '%'}">
-							{{ monsterHealth }}
+				<v-col cols="12" md="6">
+					<v-card style="padding: 8px;">
+						<h1 class="text-center">MONSTER</h1>
+						<div class="healthbar">
+							<div
+								class="healthbar healthbar-inner text-center"
+								style="margin: 0;"
+								:style="{width: monsterHealth + '%'}"
+								:class="{ 'yellow': monsterYellow, 'red': monsterRed }">
+								{{ monsterHealth }}
+							</div>
 						</div>
-					</div>
+					</v-card>
 				</v-col>
 			</v-row>
-			<section class="row controls" v-if="!gameIsRunning">
-				<div class="small-12 columns">
+			<v-row justify="center" v-if="!gameIsRunning" style="justify-content:center; margin: 0 auto;">
+				<v-col cols="12">
 					<v-btn id="start-game" @click="startGame">START NEW GAME</v-btn>
-				</div>
-			</section>
-			<section class="row controls" v-else>
-				<div class="small-12 columns">
+				</v-col>
+			</v-row>
+			<v-row justify="center" v-else style="justify-content:center; margin: 0 auto;">
+				<v-col cold="12">
 					<v-btn id="attack" @click="attack">ATTACK</v-btn>
-					<v-btn id="special-attack" @click="specialAttack">SPECIAL ATTACK</v-btn>
+					<v-btn id="special-attack" @click="specialAttack" :disabled=disableSpecial>SPECIAL ATTACK</v-btn>
 					<v-btn id="heal" @click="heal">HEAL</v-btn>
 					<v-btn id="give-up" @click="giveUp">GIVE UP</v-btn>
-				</div>
-			</section>
-			<section class="row log" v-if="turns.length > 0">
-				<div class="small-12 columns">
+				</v-col>
+			</v-row>
+			<v-row class="log" v-if="turns.length > 0" style="justify-content:center; margin: 0 auto;">
+				<v-col cols="12">
 					<ul>
 					<li v-for="turn in turns"
 						:class="{'player-turn': turn.isPlayer, 'monster-turn': !turn.isPlayer}" v-bind:key="turn.id">
 						{{ turn.text }}
 					</li>
 					</ul>
-				</div>
-			</section>
+				</v-col>
+			</v-row>
 		</v-container>
 	</div>
 </template>
@@ -67,7 +76,14 @@ export default {
       playerHealth: 100,
       monsterHealth: 100,
       gameIsRunning: false,
-      turns: []
+	  turns: [],
+	  spAttCount: 0,
+	  message: '',
+	  disableSpecial: false,
+	  playerYellow: false,
+	  playerRed: false,
+	  monsterYellow: false,
+	  monsterRed: false
     }
   },
   methods: {
@@ -75,9 +91,17 @@ export default {
         this.gameIsRunning = true;
         this.playerHealth = 100;
         this.monsterHealth = 100;
-        this.turns = [];
+		this.turns = [];
+		this.spAttCount = 0;
+		this.message = '';
+		this.disableSpecial = false;
+		this.playerYellow = false;
+		this.playerRed = false;
+		this.monsterYellow = false;
+		this.monsterRed = false;
     },
     attack: function () {
+		this.message = '';
         var damage = this.calculateDamage(3, 10);
         this.monsterHealth -= damage;
         this.turns.unshift({
@@ -87,22 +111,50 @@ export default {
         if (this.checkWin()) {
             return;
         }
+		if (this.monsterHealth < 50 && this.monsterHealth > 24) {
+			this.monsterYellow = true;
+			this.monsterRed = false;
+		}
+		else if (this.monsterHealth < 25) {
+			this.monsterYellow = false;
+			this.monsterRed = true;
+		}
 
         this.monsterAttacks();
     },
     specialAttack: function () {
-        var damage = this.calculateDamage(10, 20);
-        this.monsterHealth -= damage;
-        this.turns.unshift({
-            isPlayer: true,
-            text: 'Player hits Monster hard for ' + damage
-        });
-        if (this.checkWin()) {
-            return;
-        }
-        this.monsterAttacks();
+		if (this.spAttCount < 2) {
+			this.spAttCount += 1;
+			var damage = this.calculateDamage(10, 20);
+			this.monsterHealth -= damage;
+			this.turns.unshift({
+				isPlayer: true,
+				text: 'Player hits Monster hard for ' + damage
+			});
+			if (this.checkWin()) {
+				return;
+			}
+			if (this.monsterHealth < 50 && this.monsterHealth > 24) {
+				this.monsterYellow = true;
+				this.monsterRed = false;
+			}
+			else if (this.monsterHealth < 25) {
+				this.monsterYellow = false;
+				this.monsterRed = true;
+			}
+
+			this.monsterAttacks();
+
+			if (this.spAttCount === 2) {
+				this.disableSpecial = true;
+			}
+		}
+		else {
+			this.message = 'You can only use the special attack two times';
+		}
     },
     heal: function () {
+		this.message = '';
         if (this.playerHealth <= 90) {
             this.playerHealth += 10;
         } else {
@@ -113,8 +165,13 @@ export default {
             text: 'Player heals for 10'
         });
         this.monsterAttacks();
+		if (this.playerHealth > 49) {
+			this.playerYellow = false;
+			this.playerRed = false;
+		}
     },
     giveUp: function () {
+		this.message = '';
         this.gameIsRunning = false;
     },
     monsterAttacks: function() {
@@ -124,7 +181,15 @@ export default {
         this.turns.unshift({
             isPlayer: false,
             text: 'Monster hits Player for ' + damage
-        });
+		});
+		if (this.playerHealth < 50 && this.playerHealth > 24) {
+			this.playerYellow = true;
+			this.playerRed = false;
+		}
+		else if (this.playerHealth < 25) {
+			this.playerYellow = false;
+			this.playerRed = true;
+		}
     },
     calculateDamage: function(min, max) {
         return Math.max(Math.floor(Math.random() * max) + 1, min);
@@ -170,6 +235,17 @@ export default {
     background-color: #eee;
     margin: auto;
     transition: width 500ms;
+}
+.healthbar-inner {
+	background-color: green;
+	color: white;
+}
+.healthbar-inner.yellow {
+	background-color: yellow;
+	color: black;
+}
+.healthbar-inner.red {
+	background-color: red;
 }
 
 .controls, .log {
